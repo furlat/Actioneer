@@ -661,17 +661,17 @@ def validate_output(outs):
             non_object_outs.append(out)
     print(i,len(validated_outs),len(non_validated_outs),len(non_object_outs),len(outs))
     return validated_outs, prevalidated_outs, non_validated_outs, non_object_outs
-
-async def main(book_id: int, max_calls: Optional[int] = None):
+import os
+async def main(book_id: int,chunks_size: int=2000, max_calls: Optional[int] = None, base_path: str = "/Users/tommasofurlanello/Documents/Dev/MarketInference/data/"):
     action_extractor = StructuredTool.from_pydantic(NarrativeAnalysis)
     action_extractor.post_validate_schema = False
 
     system_prompt = SystemPrompt(name="Narrative Action Extraction System", content=system_string)
 
     llm_config_vllm_modal = LLMConfig(client=LLMClient.vllm, model=vllm_model, response_format=ResponseFormat.structured_output,max_tokens=8000)
-
-
-    novels = pl.read_parquet("/Users/tommasofurlanello/Documents/Dev/MarketInference/data/gutenberg_en_novels.parquet")
+    data_name = "gutenberg_en_novels.parquet"
+    joined_data_path = os.path.join(base_path, data_name)
+    novels = pl.read_parquet(joined_data_path)
 
     book_str = novels["TEXT"][book_id]
 
@@ -684,7 +684,7 @@ async def main(book_id: int, max_calls: Optional[int] = None):
     paragraphs = {0:[]}
     paragraphs_lengths = {0:0}
     paragraph_id = 0
-    max_length = 1000
+    max_length = chunks_size
     for text,length in book_paragraphs_df.iter_rows():
         if paragraphs_lengths[paragraph_id] + length > max_length:
             paragraph_id += 1
@@ -734,13 +734,15 @@ async def main(book_id: int, max_calls: Optional[int] = None):
     outs_with_actions = [out for out in validated_outs if out.text_had_no_actions == False]
 
     outs_frame = pl.DataFrame(outs_with_actions)
+    out_name = f"gutenberg_en_novels_actions_{book_id}_{chunks_size}.parquet"
+    out_path = os.path.join(base_path, out_name)
 
-    outs_frame.write_parquet(f"/Users/tommasofurlanello/Documents/Dev/MarketInference/data/gutenberg_en_novels_actions_{book_id}.parquet")
-    print(f"outs_frame saved to /Users/tommasofurlanello/Documents/Dev/MarketInference/data/gutenberg_en_novels_actions_{book_id}.parquet")
+    outs_frame.write_parquet(out_path)
+    print(f"outs_frame saved to {out_path}")
     print(outs_frame)
     
 
 
 
 if __name__ == "__main__":
-    asyncio.run(main(book_id=777,max_calls=None))
+    asyncio.run(main(book_id=777,chunks_size=2000,max_calls=1))
