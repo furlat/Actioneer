@@ -672,7 +672,7 @@ async def main(book_id: int,chunks_size: int=2000, max_calls: Optional[int] = No
 
     system_prompt = SystemPrompt(name="Narrative Action Extraction System", content=system_string)
 
-    llm_config_vllm_modal = LLMConfig(client=LLMClient.vllm, model=vllm_model, response_format=ResponseFormat.structured_output,max_tokens=8000)
+    llm_config_vllm_modal = LLMConfig(client=LLMClient.vllm, model=vllm_model, response_format=ResponseFormat.structured_output,max_tokens=6000)
     data_name = "gutenberg_en_novels.parquet"
     joined_data_path = os.path.join(base_path, data_name)
     try:
@@ -765,4 +765,7 @@ async def main(book_id: int,chunks_size: int=2000, max_calls: Optional[int] = No
 
 
 if __name__ == "__main__":
+    start = time.time()
     asyncio.run(main(book_id=0,chunks_size=2000,max_calls=None))
+    end = time.time()
+    print(f"Time taken: {end - start} seconds")
