@@ -671,7 +671,11 @@ async def main(book_id: int,chunks_size: int=2000, max_calls: Optional[int] = No
     llm_config_vllm_modal = LLMConfig(client=LLMClient.vllm, model=vllm_model, response_format=ResponseFormat.structured_output,max_tokens=8000)
     data_name = "gutenberg_en_novels.parquet"
     joined_data_path = os.path.join(base_path, data_name)
-    novels = pl.read_parquet(joined_data_path)
+    try:
+        novels = pl.read_parquet(joined_data_path)
+    except Exception as e:
+        print(f"Error reading parquet file: {e} did you remember to update the url with your own path?")
+        novels = pl.read_csv(joined_data_path)
 
     book_str = novels["TEXT"][book_id]
 
