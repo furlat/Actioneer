@@ -20,7 +20,7 @@ EntityRegistry()
 CallableRegistry()
 
 
-vllm_request_limits = RequestLimits(max_requests_per_minute=100, max_tokens_per_minute=200000000)
+vllm_request_limits = RequestLimits(max_requests_per_minute=1000, max_tokens_per_minute=200000000)
 
 
 vllm_model = "Qwen/Qwen2.5-32B-Instruct"
