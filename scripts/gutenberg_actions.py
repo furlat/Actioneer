@@ -613,7 +613,9 @@ def create_vllm_threads(prompts_df:pl.DataFrame, system_prompt:SystemPrompt, llm
             use_schema_instruction=False
         )
         vllm_threads.append(vllm_thread)
-    return vllm_threads
+    thread_id = [str(thread.live_id) for thread in vllm_threads]
+    prompts_df_with_thread_ids = prompts_df.with_columns(pl.Series(name="thread_id", values=thread_id)).with_columns(pl.Series(name="thread_id", values=thread_id)).with_row_index()
+    return vllm_threads, prompts_df_with_thread_ids
 
 
 def clean_gutenberg_text(text):
@@ -645,6 +647,7 @@ def clean_gutenberg_text(text):
 def validate_output(outs):
     i=0
     validated_outs = []
+    validated_outs_thread_ids = []
     prevalidated_outs = []
     non_validated_outs = []
     non_object_outs = []
@@ -652,6 +655,7 @@ def validate_output(outs):
         if out.json_object:
             try:
                 validated_outs.append(NarrativeAnalysis.model_validate(out.json_object.object))
+                validated_outs_thread_ids.append(out.chat_thread_live_id)
                 prevalidated_outs.append(out)
             except Exception as e:
                 non_validated_outs.append(out)
@@ -659,8 +663,8 @@ def validate_output(outs):
             i=i+1
         else:
             non_object_outs.append(out)
-    print(i,len(validated_outs),len(non_validated_outs),len(non_object_outs),len(outs))
-    return validated_outs, prevalidated_outs, non_validated_outs, non_object_outs
+    print(i,len(validated_outs),len(validated_outs_thread_ids),len(prevalidated_outs),len(non_validated_outs),len(non_object_outs),len(outs))
+    return validated_outs,validated_outs_thread_ids, prevalidated_outs, non_validated_outs, non_object_outs
 import os
 async def main(book_id: int,chunks_size: int=2000, max_calls: Optional[int] = None, base_path: str = "/Users/tommasofurlanello/Documents/Dev/MarketInference/data/"):
     action_extractor = StructuredTool.from_pydantic(NarrativeAnalysis)
@@ -722,7 +726,7 @@ async def main(book_id: int,chunks_size: int=2000, max_calls: Optional[int] = No
         example_prompts = prompts_df
 
 
-    threads = create_vllm_threads(example_prompts, system_prompt, llm_config_vllm_modal, action_extractor)
+    threads, prompts_df_with_thread_ids = create_vllm_threads(example_prompts, system_prompt, llm_config_vllm_modal, action_extractor)
 
     outs = await orchestrator.run_parallel_ai_completion(threads)
 
@@ -734,16 +738,28 @@ async def main(book_id: int,chunks_size: int=2000, max_calls: Optional[int] = No
 
 
 
-    validated_outs, prevalidated_outs, non_validated_outs, non_object_outs = validate_output(outs)
-    outs_with_actions = [out for out in validated_outs if out.text_had_no_actions == False]
+    validated_outs, validated_outs_thread_ids, prevalidated_outs, non_validated_outs, non_object_outs = validate_output(outs)
+
+    outs_with_actions = []
+    outs_with_actions_thread_ids = []
+    for out, out_ids in zip(validated_outs, validated_outs_thread_ids):
+        if out.text_had_no_actions == False:
+            outs_with_actions.append(out)
+            outs_with_actions_thread_ids.append(str(out_ids))
+            
 
     outs_frame = pl.DataFrame(outs_with_actions)
+    outs_id_frame = pl.DataFrame({"thread_id": outs_with_actions_thread_ids})
+    outs_frame_with_ids = pl.concat([outs_frame, outs_id_frame], how="horizontal")
+    print(outs_frame_with_ids)
+    print(prompts_df_with_thread_ids)
+    out_sframe_with_ids_joined_prompts = outs_frame_with_ids.join(prompts_df_with_thread_ids, on="thread_id", how="left").sort("index")
     out_name = f"gutenberg_en_novels_actions_{book_id}_{chunks_size}.parquet"
     out_path = os.path.join(base_path, out_name)
 
-    outs_frame.write_parquet(out_path)
+    out_sframe_with_ids_joined_prompts.write_parquet(out_path)
     print(f"outs_frame saved to {out_path}")
-    print(outs_frame)
+    print(out_sframe_with_ids_joined_prompts)
     
 
 
