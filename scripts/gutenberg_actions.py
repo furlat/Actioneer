@@ -618,31 +618,16 @@ def create_vllm_threads(prompts_df:pl.DataFrame, system_prompt:SystemPrompt, llm
     return vllm_threads, prompts_df_with_thread_ids
 
 
-def clean_gutenberg_text(text):
-    """
-    Clean Gutenberg book text by:
-    - Replacing multiple newlines with a single newline
-    - Replacing multiple spaces with a single space
-    - Breaking text into paragraphs based on newlines
-    
-    Args:
-        text (str): The raw Gutenberg book text
-        
-    Returns:
-        list: List of paragraphs
-    """
+def clean_lines(lines):
     import re
-    
-    # First, replace multiple spaces with a single space
-    text = re.sub(r' +', ' ', text)
-    
-    # Split text into paragraphs based on newlines
-    paragraphs = re.split(r'\n+', text)
-    
-    # Remove any empty paragraphs and strip whitespace from each paragraph
-    paragraphs = [p.strip() for p in paragraphs if p.strip()]
-    
-    return paragraphs
+    split_lines = lines.split("\n\r\n\r\n")
+    newlines = []
+    for line in split_lines: 
+        l=re.sub('(\r\n)+\r?\n?',' ',line)
+        l = re.sub(r"\s\s+"," ",l)
+        if not re.search(r'^[^a-zA-Z0-9]+$',l):
+            newlines.append(l.strip())
+    return newlines
 
 def validate_output(outs):
     i=0
@@ -683,7 +668,7 @@ async def main(book_id: int,chunks_size: int=2000, max_calls: Optional[int] = No
 
     book_str = novels["TEXT"][book_id]
 
-    book_paragraphs = clean_gutenberg_text(book_str)
+    book_paragraphs = clean_lines(book_str)
     book_paragraphs_str = "\n".join(book_paragraphs)
     print(len(book_str),len(book_paragraphs_str))
 
