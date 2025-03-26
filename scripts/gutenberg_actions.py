@@ -20,7 +20,7 @@ EntityRegistry()
 CallableRegistry()
 
 
-vllm_request_limits = RequestLimits(max_requests_per_minute=1000, max_tokens_per_minute=200000000)
+vllm_request_limits = RequestLimits(max_requests_per_minute=100, max_tokens_per_minute=200000000)
 
 
 vllm_model = "Qwen/Qwen2.5-32B-Instruct"
@@ -751,6 +751,12 @@ async def main(book_id: int,chunks_size: int=2000, max_calls: Optional[int] = No
 
 if __name__ == "__main__":
     start = time.time()
-    asyncio.run(main(book_id=0,chunks_size=2000,max_calls=None))
+    book_start = 0
+    num_books = 100
+    for book_id in range(book_start, book_start + num_books):
+        start_book = time.time()
+        asyncio.run(main(book_id=book_id,chunks_size=2000,max_calls=None))
+        end_book = time.time()
+        print(f"Time taken for book {book_id}: {end_book - start_book} seconds")
     end = time.time()
-    print(f"Time taken: {end - start} seconds")
+    print(f"Total ime taken: {end - start} seconds for {num_books} books with an average of {num_books/(end - start)} books per second")
