@@ -24,7 +24,7 @@ vllm_request_limits = RequestLimits(max_requests_per_minute=50, max_tokens_per_m
 
 
 vllm_model = "Qwen/Qwen2.5-32B-Instruct"
-vllm_endpoints = ["https://hk3-lab-team--qwen32-vllm-optimized-openai-0-serve.modal.run/v1/chat/completions","https://hk3-lab-team--qwen32-vllm-optimized-openai-1-serve.modal.run/v1/chat/completions","https://hk3-lab-team--qwen32-vllm-optimized-openai-2-serve.modal.run/v1/chat/completions","https://hk3-lab-team--qwen32-vllm-optimized-openai-3-serve.modal.run/v1/chat/completions","https://hk3-lab-team--qwen32-vllm-optimized-openai-4-serve.modal.run/v1/chat/completions"]
+# vllm_endpoints = ["https://hk3-lab-team--qwen32-vllm-optimized-openai-0-serve.modal.run/v1/chat/completions","https://hk3-lab-team--qwen32-vllm-optimized-openai-1-serve.modal.run/v1/chat/completions","https://hk3-lab-team--qwen32-vllm-optimized-openai-2-serve.modal.run/v1/chat/completions","https://hk3-lab-team--qwen32-vllm-optimized-openai-3-serve.modal.run/v1/chat/completions","https://hk3-lab-team--qwen32-vllm-optimized-openai-4-serve.modal.run/v1/chat/completions"]
 orchestrator = InferenceOrchestrator(vllm_request_limits=vllm_request_limits,vllm_endpoint=vllm_endpoints[1])
 EntityRegistry.set_inference_orchestrator(orchestrator)
 EntityRegistry.set_tracing_enabled(False)
