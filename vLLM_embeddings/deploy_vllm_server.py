@@ -43,7 +43,7 @@ vllm_image = modal.Image.debian_slim().pip_install(
     # Set environment variables for better GPU utilization
     "echo 'export CUDA_VISIBLE_DEVICES=0' >> /etc/profile",
     "echo 'export NCCL_ASYNC_ERROR_HANDLING=1' >> /etc/profile",
-    "echo 'export VLLM_USE_V1=0' >> /etc/profile",
+    "echo 'export VLLM_USE_V1=1' >> /etc/profile",
     # Avoid PyTorch distributed process group warnings
     "echo 'export TORCH_DISTRIBUTED_DEBUG=DETAIL' >> /etc/profile",
 )
@@ -86,7 +86,7 @@ def vllm_server(text: str = None, texts: str = None, model: str = "Alibaba-NLP/g
     
     # Set environment variables to avoid warnings
     os.environ["NCCL_ASYNC_ERROR_HANDLING"] = "1"
-    os.environ["VLLM_USE_V1"] = "0"
+    os.environ["VLLM_USE_V1"] = "1"
     os.environ["TORCH_DISTRIBUTED_DEBUG"] = "DETAIL"
     
     # Register cleanup function for distributed processes
